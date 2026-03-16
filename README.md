@@ -1,161 +1,131 @@
 # DevThread
 
-Challenge técnico para Fudo. Es una aplicación tipo feed/blog orientada a desarrolladores, donde se pueden crear, editar y eliminar posts, y dejar comentarios con soporte de respuestas anidadas. Incluye toggle de tema claro/oscuro.
+Challenge técnico para Fudo. La idea es un feed/blog para desarrolladores donde podés crear, editar y eliminar posts, dejar comentarios y responder comentarios (anidados, tipo Reddit). También tiene toggle de tema claro/oscuro.
 
 ## Stack
 
-- **React 19** + **TypeScript** con **Vite** como bundler
-- **React Router v7** para el routing del lado del cliente
-- **TanStack Query v5** para manejo de estado del servidor (cache, refetch, optimistic updates)
-- **Tailwind CSS** para estilos
-- **Axios** como cliente HTTP
-- **Jest** + **React Testing Library** para tests unitarios
-- **Cypress** para tests end-to-end
+React 19 con TypeScript, Vite como bundler, React Router v7, TanStack Query v5 para todo lo que es estado del servidor (cache, refetch, optimistic updates), Tailwind para estilos y Axios como cliente HTTP.
+
+Para testing: Jest + React Testing Library para unitarios, Cypress para E2E.
 
 El backend es una instancia de [MockAPI](https://mockapi.io) que expone endpoints REST para posts y comentarios.
 
-## Requisitos previos
+## Levantar el proyecto
 
-- Node.js 20+
-- npm
-
-## Cómo levantar el proyecto
-
-1. Clonar el repositorio e instalar dependencias:
+Necesitás Node 20+ y npm.
 
 ```bash
 npm install
-```
-
-2. Crear el archivo de variables de entorno a partir del ejemplo:
-
-```bash
 cp .env.example .env
 ```
 
-3. Abrir `.env` y completar `VITE_API_BASE_URL` con la URL de tu instancia de MockAPI (algo como `https://xxxxxxxxx.mockapi.io`).
-
-4. Levantar el servidor de desarrollo:
+Abrí `.env` y completá `VITE_API_BASE_URL` con la URL de tu instancia de MockAPI (algo como `https://xxxxxxxxx.mockapi.io`). Después:
 
 ```bash
 npm run dev
 ```
 
-La app queda disponible en `http://localhost:5173`.
+Listo, queda corriendo en `http://localhost:5173`.
 
-### Con Docker
+### Docker
 
-Si preferís usar Docker, no hace falta tener Node instalado localmente. Solo hace falta Docker y Docker Compose:
+Si no querés instalar Node, con Docker y Docker Compose alcanza:
 
 ```bash
 docker compose up --build
 ```
 
-Esto genera un build de producción y lo sirve con nginx en `http://localhost:8080`. La variable `VITE_API_BASE_URL` se inyecta como build argument durante la construcción de la imagen.
+Build de producción servido con Nginx en `http://localhost:8080`. La variable `VITE_API_BASE_URL` se inyecta como build arg.
 
 ### Deploy en Render
 
-Para desplegar en [Render](https://render.com) como Web Service con Nginx (según el requerimiento del challenge):
+El proyecto está preparado para deployar en [Render](https://render.com) con Nginx:
 
-1. Sube el repositorio a GitHub, GitLab o Bitbucket.
-2. En el [Dashboard de Render](https://dashboard.render.com/), haz clic en **New** → **Web Service**.
-3. Conecta tu repositorio y selecciona el proyecto.
-4. Configura el servicio:
-   - **Name**: nombre del servicio (ej: `fudo-challenge`)
-   - **Region**: la más cercana a tus usuarios
-   - **Branch**: `main` (o la rama que uses)
-   - **Runtime**: **Docker** (importante: no uses Node, usa Docker para que se use el Dockerfile con Nginx)
-5. En **Environment**, agrega la variable:
-   - `VITE_API_BASE_URL` = `https://665de6d7e88051d60408c32d.mockapi.io` (o tu URL de MockAPI)
-6. Haz clic en **Create Web Service**.
+1. Subí el repo a GitHub/GitLab/Bitbucket.
+2. En Render: **New** → **Web Service** → conectá el repo.
+3. Runtime: **Docker** (importante, no Node).
+4. Agregá la variable de entorno `VITE_API_BASE_URL` con tu URL de MockAPI.
+5. Create Web Service y listo.
 
-Render construirá la imagen desde el Dockerfile (build multi-stage con Node + Nginx) y desplegará la app. La configuración de Nginx ya está ajustada para el puerto 10000 que Render espera por defecto.
+La imagen usa un Dockerfile multi-stage (Node para build, Nginx para servir) y el Nginx ya está configurado para el puerto 10000 que espera Render.
 
 ## Tests
 
-El proyecto tiene dos niveles de testing:
-
-### Tests unitarios
+### Unitarios
 
 ```bash
 npm test
 ```
 
-Cubren componentes de UI, hooks, funciones de utilidad, el cliente HTTP y las páginas principales. La cobertura mínima está configurada en 90% para branches, funciones, líneas y statements. Si alguna métrica baja de ese umbral, el comando falla.
+Cubren componentes, hooks, utilidades, el cliente HTTP y las páginas. La cobertura mínima está en 90% para branches, funciones, líneas y statements — si baja de ahí, falla.
 
-### Tests E2E
+### E2E
 
 ```bash
 npm run e2e
 ```
 
-Corren con Cypress en modo headless. Validan los flujos principales de la aplicación: navegación entre páginas, CRUD de posts, creación de comentarios, manejo de estados vacíos y cambio de tema. Las llamadas a la API se interceptan con `cy.intercept` para que los tests no dependan de un backend real.
+Cypress en modo headless. Validan navegación, CRUD de posts, comentarios, estados vacíos y cambio de tema. Las llamadas a la API se interceptan con `cy.intercept`, así que no dependen de un backend real.
 
-Para abrir Cypress en modo interactivo (útil para desarrollo y debugging):
+Para modo interactivo:
 
 ```bash
 npm run e2e:open
 ```
 
-## Estructura del proyecto
+## Estructura
 
 ```
 src/
-├── app/                # Componente raíz, configuración del router y providers
+├── app/                  # App raíz, router y providers
 ├── components/
-│   ├── layout/         # Header y MainLayout (estructura general de la página)
-│   └── ui/             # Componentes genéricos reutilizables: Button, Card, Input,
-│                       # Textarea, Modal, Avatar, Dropdown
-├── contexts/           # ThemeContext para el manejo del tema claro/oscuro
+│   ├── layout/           # Header, MainLayout
+│   └── ui/               # Button, Card, Input, Textarea, Modal, Avatar,
+│                         # Dropdown, Skeleton, FormField
+├── contexts/             # ThemeContext (tema claro/oscuro)
 ├── features/
-│   ├── posts/          # Feature de posts: páginas (Feed, PostDetail), hooks
-│   │                   # (usePosts, useCreatePost, etc.), componentes (PostCard,
-│   │                   # PostForm, PostFormModal)
-│   └── comments/       # Feature de comentarios: CommentTree, CommentItem y hooks
-│                       # para crear/editar/eliminar comentarios
+│   ├── posts/            # Feed, detalle, CRUD — páginas, hooks, componentes
+│   └── comments/         # Comentarios anidados — árbol, CRUD, hooks
 ├── lib/
-│   ├── api/            # Cliente Axios centralizado y definición de endpoints
-│   └── utils/          # Funciones auxiliares (ej: buildCommentTree para armar
-│                       # el árbol de comentarios a partir de la lista plana)
-├── styles/             # Estilos globales y design tokens en CSS custom properties
-└── types/              # Tipos TypeScript compartidos (Post, Comment)
+│   ├── api/              # Cliente Axios + endpoints
+│   ├── avatars.ts        # Avatar determinista por nombre
+│   ├── constants/        # Mensajes/textos
+│   └── utils/            # buildCommentTree, formatDate
+├── styles/               # CSS global + design tokens
+└── types/                # Post, Comment
 ```
 
 ## API
 
-La aplicación consume una API REST con los siguientes endpoints:
+La app consume estos endpoints REST:
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/post` | Listar todos los posts |
-| GET | `/post/:id` | Obtener un post por ID |
-| POST | `/post` | Crear un post |
-| PUT | `/post/:id` | Actualizar un post |
-| DELETE | `/post/:id` | Eliminar un post |
-| GET | `/post/:postId/comment` | Listar comentarios de un post |
-| POST | `/post/:postId/comment` | Crear un comentario en un post |
-| PUT | `/post/:postId/comment/:commentId` | Actualizar un comentario |
-| DELETE | `/post/:postId/comment/:commentId` | Eliminar un comentario |
+| Método | Ruta | Qué hace |
+|--------|------|----------|
+| GET | `/post` | Lista posts |
+| GET | `/post/:id` | Un post |
+| POST | `/post` | Crear post |
+| PUT | `/post/:id` | Editar post |
+| DELETE | `/post/:id` | Borrar post |
+| GET | `/post/:postId/comment` | Comentarios de un post |
+| POST | `/post/:postId/comment` | Nuevo comentario |
+| PUT | `/post/:postId/comment/:commentId` | Editar comentario |
+| DELETE | `/post/:postId/comment/:commentId` | Borrar comentario |
 
-Los modelos principales son:
-
-- **Post**: `id`, `title`, `content`, `name`, `avatar`, `createdAt`
-- **Comment**: `id`, `content`, `name`, `avatar`, `parentId` (null si es comentario raíz), `createdAt`
-
-## Variables de entorno
-
-| Variable | Descripción |
-|---|---|
-| `VITE_API_BASE_URL` | URL base de la instancia de MockAPI. Se usa tanto en la app como en los tests de Cypress para interceptar las llamadas. |
+**Post**: `id`, `title`, `content`, `name`, `avatar`, `createdAt`
+**Comment**: `id`, `content`, `name`, `avatar`, `parentId` (null = raíz), `createdAt`
 
 ## Decisiones técnicas
 
-- **Estructura por feature**: en lugar de organizar el código por tipo de archivo (una carpeta de hooks, otra de componentes, otra de páginas), opté por agrupar por funcionalidad. Cada feature contiene sus propios componentes, hooks y páginas. Esto facilita la navegación del código y escala mejor a medida que el proyecto crece.
+**Estructura por feature** — El código está organizado por funcionalidad, no por tipo de archivo. Cada feature tiene sus componentes, hooks y páginas. Es más fácil de navegar y escala mejor.
 
-- **TanStack Query para el estado del servidor**: en vez de manejar el estado del servidor manualmente con `useEffect` + `useState`, delegué esa responsabilidad a TanStack Query. Se encarga del cache, la invalidación, los estados de loading/error y la sincronización con el backend.
+**TanStack Query para estado del servidor** — En vez de `useEffect` + `useState` manual para cada llamada, TanStack Query maneja cache, invalidación, loading/error y sincronización con el backend.
 
-- **Comentarios anidados del lado del cliente**: la API devuelve los comentarios como una lista plana, cada uno con un campo `parentId`. La función `buildCommentTree` los reestructura en un árbol recursivo para renderizar las respuestas anidadas correctamente.
+**Comentarios anidados client-side** — La API devuelve una lista plana con `parentId`. `buildCommentTree` la reestructura en un árbol recursivo para renderizar las respuestas anidadas.
 
-- **Cobertura de tests al 90%**: los umbrales de cobertura de Jest están configurados al 90% en las cuatro métricas. El objetivo es mantener un nivel de confianza alto para poder refactorizar sin miedo a romper funcionalidad sin darse cuenta.
+**Avatares deterministas** — `getAvatarForName` hashea el nombre del usuario para asignarle siempre el mismo avatar de un set de 8 SVGs. No hay auth, pero cada nombre tiene su identidad visual consistente.
 
-- **Cliente HTTP centralizado**: todas las llamadas HTTP pasan por una instancia de Axios configurada en `src/lib/api/client.ts`, que aplica la base URL y headers comunes en un solo lugar.
+**Cobertura al 90%** — Los umbrales de Jest están en 90% en las cuatro métricas. La idea es poder refactorizar tranquilo sin romper cosas sin darte cuenta.
+
+**Cliente HTTP centralizado** — Todas las llamadas pasan por una instancia de Axios en `src/lib/api/client.ts` con base URL y headers configurados en un solo lugar.
+
+**Design tokens** — Los estilos usan CSS custom properties (`--color-bg`, `--color-text`, `--color-accent`, etc.) para manejar los temas. El toggle cambia el atributo `data-theme` en el HTML y las variables hacen el resto.
