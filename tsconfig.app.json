@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
@@ -29,5 +29,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "**/test-utils.tsx"]
 }
