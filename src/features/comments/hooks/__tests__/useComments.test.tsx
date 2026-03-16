@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTestWrapper } from '@/test-utils';
 import { useComments } from '../useComments';
 
 jest.mock('../../api/commentsApi', () => ({
@@ -7,17 +7,6 @@ jest.mock('../../api/commentsApi', () => ({
 }));
 
 const { getComments } = require('../../api/commentsApi');
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
 
 describe('useComments', () => {
   beforeEach(() => {
@@ -28,7 +17,7 @@ describe('useComments', () => {
     const data = [{ id: '1', content: 'Hi', name: 'A', avatar: '', parentId: null, createdAt: '' }];
     (getComments as jest.Mock).mockResolvedValue(data);
     const { result } = renderHook(() => useComments('post-1'), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(data);
@@ -37,7 +26,7 @@ describe('useComments', () => {
 
   it('does not fetch when postId undefined', () => {
     renderHook(() => useComments(undefined), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
     expect(getComments).not.toHaveBeenCalled();
   });

@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTestWrapper } from '@/test-utils';
 import { useUpdateComment } from '../useUpdateComment';
 
 jest.mock('../../api/commentsApi', () => ({
@@ -7,17 +7,6 @@ jest.mock('../../api/commentsApi', () => ({
 }));
 
 const { updateComment } = require('../../api/commentsApi');
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { mutations: { retry: false } },
-  });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
 
 describe('useUpdateComment', () => {
   beforeEach(() => {
@@ -35,7 +24,7 @@ describe('useUpdateComment', () => {
     };
     (updateComment as jest.Mock).mockResolvedValue(updated);
     const { result } = renderHook(() => useUpdateComment('post-1'), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
     result.current.mutate({
       commentId: '1',

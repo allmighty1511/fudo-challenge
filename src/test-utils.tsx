@@ -41,4 +41,11 @@ export function renderWithProviders(
   });
 }
 
+export function createTestWrapper() {
+  const queryClient = createTestQueryClient();
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  };
+}
+
 export { createTestQueryClient };

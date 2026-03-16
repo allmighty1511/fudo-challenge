@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTestWrapper } from '@/test-utils';
 import { usePosts } from '../usePosts';
 
 jest.mock('../../api/postsApi', () => ({
@@ -7,17 +7,6 @@ jest.mock('../../api/postsApi', () => ({
 }));
 
 const { getPosts } = require('../../api/postsApi');
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
 
 describe('usePosts', () => {
   beforeEach(() => {
@@ -30,7 +19,7 @@ describe('usePosts', () => {
     ];
     (getPosts as jest.Mock).mockResolvedValue(data);
     const { result } = renderHook(() => usePosts(), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(data);
