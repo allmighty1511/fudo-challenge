@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Routes, Route } from 'react-router-dom';
 import { PostDetailPage } from '../PostDetailPage';
 import { renderWithProviders } from '@/test-utils';
 
@@ -157,9 +158,12 @@ describe('PostDetailPage', () => {
   });
 
   it('renders CommentTree', () => {
-    renderWithProviders(<PostDetailPage />, {
-      initialEntries: ['/post/1'],
-    });
+    renderWithProviders(
+      <Routes>
+        <Route path="/post/:id" element={<PostDetailPage />} />
+      </Routes>,
+      { initialEntries: ['/post/1'] }
+    );
     expect(screen.getByTestId('comment-tree')).toBeInTheDocument();
   });
 });

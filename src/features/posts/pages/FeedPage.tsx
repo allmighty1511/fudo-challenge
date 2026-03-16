@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { messages } from '@/lib/constants/messages';
 import { PostCard, PostFormModal } from '../components';
 import {
   usePosts,
@@ -31,7 +33,7 @@ export function FeedPage() {
   };
 
   const handleDelete = (post: Post) => {
-    if (window.confirm('¿Eliminar este post?')) {
+    if (window.confirm(messages.confirm.deletePost)) {
       deletePost.mutate(post.id);
     }
   };
@@ -59,7 +61,7 @@ export function FeedPage() {
   if (error) {
     return (
       <MainLayout>
-        <p className="text-[var(--color-error)]">Error al cargar los posts.</p>
+        <p className="text-[var(--color-error)]">{messages.errors.loadPosts}</p>
       </MainLayout>
     );
   }
@@ -75,12 +77,7 @@ export function FeedPage() {
 
       {isLoading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-32 bg-gray-200 animate-pulse rounded-[var(--radius-md)]"
-            />
-          ))}
+          <Skeleton variant="card" count={3} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -94,7 +91,7 @@ export function FeedPage() {
           ))}
           {posts?.length === 0 && (
             <p className="text-center text-[var(--color-text-muted)] py-12">
-              No hay posts aún. ¡Crea el primero!
+              {messages.empty.noPosts}
             </p>
           )}
         </div>
