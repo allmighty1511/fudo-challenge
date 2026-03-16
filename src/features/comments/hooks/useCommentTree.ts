@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getAvatarForName } from '@/lib/avatars';
+import { getAvatarPathForName } from '@/lib/avatars';
 import { messages } from '@/lib/constants/messages';
 import { buildCommentTree } from '@/lib/utils/buildCommentTree';
 import type { CommentActionsValue } from '../contexts/CommentActionsContext';
@@ -26,7 +26,7 @@ export function useCommentTree(postId: string | undefined) {
       {
         content: newCommentContent.trim(),
         name,
-        avatar: getAvatarForName(name),
+        avatar: getAvatarPathForName(name),
         parentId: null,
       },
       {
@@ -53,7 +53,7 @@ export function useCommentTree(postId: string | undefined) {
         {
           content: data.content.trim(),
           name,
-          avatar: getAvatarForName(name),
+          avatar: getAvatarPathForName(name),
           parentId,
         },
         {

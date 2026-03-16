@@ -3,7 +3,7 @@ import { createTestWrapper } from '@/test-utils';
 import { useCommentTree } from '../useCommentTree';
 
 jest.mock('@/lib/avatars', () => ({
-  getAvatarForName: (name: string) => `http://avatar/${name}`,
+  getAvatarPathForName: () => '/avatars/avatar1.svg',
 }));
 
 jest.mock('../useComments', () => ({
@@ -90,7 +90,7 @@ describe('useCommentTree', () => {
       expect.objectContaining({
         content: 'Hello',
         name: 'John',
-        avatar: 'http://avatar/John',
+        avatar: '/avatars/avatar1.svg',
         parentId: null,
       }),
       expect.any(Object)

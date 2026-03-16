@@ -10,9 +10,13 @@ import {
   useUpdatePost,
   useDeletePost,
 } from '../hooks';
-import { getAvatarForName, resolveAvatar } from '@/lib/avatars';
+import { getAvatarPathForName, toAvatarPath } from '@/lib/avatars';
 import type { Post } from '@/types';
 import type { PostFormData, PostFormFields } from '../types';
+
+function getAvatarForSubmit(editingPost: Post | null, name: string): string {
+  return editingPost ? toAvatarPath(editingPost.avatar) : getAvatarPathForName(name.trim());
+}
 
 export function FeedPage() {
   const { data: posts, isLoading, error } = usePosts();
@@ -40,9 +44,7 @@ export function FeedPage() {
   };
 
   const handleSubmit = (fields: PostFormFields) => {
-    const avatar = editingPost?.avatar
-      ? resolveAvatar(editingPost.avatar)
-      : getAvatarForName(fields.name.trim());
+    const avatar = getAvatarForSubmit(editingPost, fields.name);
     const data: PostFormData = { ...fields, avatar };
     if (editingPost) {
       updatePost.mutate(

@@ -2,11 +2,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PostFormModal } from '../PostFormModal';
 
-jest.mock('@/lib/avatars', () => ({
-  getAvatarForName: (name: string) => `http://avatar/${name}`,
-  resolveAvatar: (avatar: string) => avatar || 'http://default',
-}));
-
 describe('PostFormModal', () => {
   it('renders Nuevo post title when no post', () => {
     render(

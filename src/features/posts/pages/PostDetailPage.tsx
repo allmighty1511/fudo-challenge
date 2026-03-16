@@ -11,7 +11,7 @@ import { useCommentTree } from '@/features/comments/hooks';
 import { messages } from '@/lib/constants/messages';
 import { formatDate } from '@/lib/utils/formatDate';
 import { PostFormModal } from '../components';
-import { resolveAvatar } from '@/lib/avatars';
+import { toAvatarPath } from '@/lib/avatars';
 import { usePost, useUpdatePost, useDeletePost } from '../hooks';
 import type { PostFormData, PostFormFields } from '../types';
 
@@ -34,7 +34,7 @@ export function PostDetailPage() {
 
   const handleSubmitEdit = (fields: PostFormFields) => {
     if (!post) return;
-    const avatar = resolveAvatar(post.avatar);
+    const avatar = toAvatarPath(post.avatar);
     const data: PostFormData = { ...fields, avatar };
     updatePost.mutate(
       { id: post.id, post: data },

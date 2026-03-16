@@ -3,8 +3,12 @@ import {
   getRandomAvatar,
   getRandomAvatarUrl,
   getAvatarForName,
+  getAvatarPathForName,
   getDefaultAvatar,
   resolveAvatar,
+  toAvatarPath,
+  getInitials,
+  getAvatarColorFromName,
   AVATARS,
 } from '../avatars';
 
@@ -115,6 +119,61 @@ describe('avatars', () => {
     it('returns default for unknown path', () => {
       const url = resolveAvatar('/unknown/path.svg');
       expect(url).toContain('/avatars/');
+    });
+
+    it('normalizes our avatar URLs to current origin (fix prod)', () => {
+      const url = resolveAvatar('http://localhost:5173/avatars/avatar1.svg');
+      expect(url).toMatch(/^https?:\/\/.+\/avatars\/avatar1\.svg$/);
+      expect(url).toContain('/avatars/avatar1.svg');
+    });
+  });
+
+  describe('getAvatarPathForName', () => {
+    it('returns path only, not full URL', () => {
+      const path = getAvatarPathForName('Alice');
+      expect(path).toMatch(/^\/avatars\/avatar\d\.svg$/);
+      expect(path).not.toMatch(/^https?:\/\//);
+    });
+  });
+
+  describe('toAvatarPath', () => {
+    it('extracts path from full URL', () => {
+      expect(toAvatarPath('http://localhost:5173/avatars/avatar3.svg')).toBe('/avatars/avatar3.svg');
+    });
+    it('returns path as-is when already path', () => {
+      expect(toAvatarPath('/avatars/avatar2.svg')).toBe('/avatars/avatar2.svg');
+    });
+  });
+
+  describe('getInitials', () => {
+    it('returns first letter for single name', () => {
+      expect(getInitials('Alice')).toBe('A');
+    });
+    it('returns first and last initial for full name', () => {
+      expect(getInitials('John Doe')).toBe('JD');
+    });
+    it('returns first and last initial for three names', () => {
+      expect(getInitials('María García López')).toBe('ML');
+    });
+    it('returns ? for empty or null', () => {
+      expect(getInitials('')).toBe('?');
+      expect(getInitials(null)).toBe('?');
+      expect(getInitials(undefined)).toBe('?');
+    });
+    it('trims whitespace', () => {
+      expect(getInitials('  John Doe  ')).toBe('JD');
+    });
+  });
+
+  describe('getAvatarColorFromName', () => {
+    it('returns same color for same name', () => {
+      const c1 = getAvatarColorFromName('Alice');
+      const c2 = getAvatarColorFromName('Alice');
+      expect(c1).toBe(c2);
+    });
+    it('returns hex color', () => {
+      const color = getAvatarColorFromName('Bob');
+      expect(color).toMatch(/^#[0-9a-f]{6}$/);
     });
   });
 });
