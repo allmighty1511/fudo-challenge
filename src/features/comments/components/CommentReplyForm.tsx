@@ -22,7 +22,7 @@ export function CommentReplyForm({
   isLoading,
 }: CommentReplyFormProps) {
   return (
-    <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-[var(--radius-md)]">
+    <div className="mt-3 space-y-2 p-3 bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)]">
       <Input
         placeholder="Tu nombre"
         value={name}

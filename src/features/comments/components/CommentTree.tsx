@@ -47,7 +47,7 @@ export function CommentTree({
         Comentarios {commentCount > 0 && `(${commentCount})`}
       </h3>
 
-      <div className="space-y-3 p-4 bg-gray-50 rounded-[var(--radius-md)]">
+      <div className="space-y-3 p-4 bg-[var(--color-surface-elevated)] rounded-[var(--radius-md)]">
         <Input
           placeholder="Tu nombre"
           value={newCommentName}
