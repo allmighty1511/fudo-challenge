@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { apiClient } from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Comment } from '@/types';
@@ -16,15 +15,12 @@ export function getDescendantIds(comments: Comment[], parentId: string): string[
 }
 
 export async function getComments(postId: string): Promise<Comment[]> {
-  try {
-    const { data } = await apiClient.get<Comment[]>(endpoints.comments(postId));
-    return data;
-  } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 404) {
-      return [];
-    }
-    throw err;
-  }
+  const { status, data } = await apiClient.get<Comment[] | unknown>(
+    endpoints.comments(postId),
+    { validateStatus: (s) => s === 200 || s === 404 }
+  );
+  if (status === 404) return [];
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createComment(
