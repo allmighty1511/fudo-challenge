@@ -16,7 +16,21 @@ interface WindowWithMatchMedia extends Window {
   matchMedia: (query: string) => MediaQueryList;
 }
 
+const STORAGE_KEY = 'devthread-theme';
+
 describe('ThemeContext', () => {
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY);
+  });
+
+  it('uses stored theme from localStorage on init', () => {
+    localStorage.setItem(STORAGE_KEY, 'dark');
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: ({ children }) => <ThemeProvider>{children}</ThemeProvider>,
+    });
+    expect(result.current.theme).toBe('dark');
+  });
+
   it('provides dark theme when prefers-color-scheme dark', () => {
     const originalMatchMedia = window.matchMedia;
     (window as WindowWithMatchMedia).matchMedia = jest.fn().mockImplementation((query: string) => ({
