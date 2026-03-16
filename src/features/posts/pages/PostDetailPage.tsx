@@ -129,7 +129,7 @@ export function PostDetailPage() {
         </div>
       </Card>
 
-      <CommentTree postId={post.id} />
+      <CommentTree postId={id!} />
 
       <PostFormModal
         isOpen={isEditModalOpen}
