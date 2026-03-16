@@ -8,6 +8,9 @@ const mockGetDescendantIds = jest.fn((_comments: unknown[], _parentId: string) =
 jest.mock('../../api/commentsApi', () => ({
   deleteComment: jest.fn(),
   getComments: (postId: string) => mockGetComments(postId),
+}));
+
+jest.mock('@/lib/utils/buildCommentTree', () => ({
   getDescendantIds: (comments: unknown[], parentId: string) =>
     mockGetDescendantIds(comments, parentId),
 }));

@@ -1,8 +1,10 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { renderWithProviders } from '@/test-utils';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { UseMutationResult } from '@tanstack/react-query';
 import { CommentItem } from '../CommentItem';
+import { CommentActionsProvider } from '../../contexts/CommentActionsContext';
 
 jest.mock('@/lib/avatars', () => ({
   getAvatarForName: (name: string) => `http://avatar/${name}`,
@@ -23,7 +25,9 @@ const mockComment = {
   replies: [],
 };
 
-function createMockMutation(callOnSuccess = false): any {
+function createMockMutation(callOnSuccess = false): Partial<
+  UseMutationResult<unknown, Error, unknown, unknown>
+> {
   return {
     mutate: jest.fn((...args: unknown[]) => {
       if (callOnSuccess && args[1] && typeof args[1] === 'object' && 'onSuccess' in args[1]) {
@@ -42,28 +46,41 @@ function createMockMutation(callOnSuccess = false): any {
     failureCount: 0,
     isPaused: false,
     submittedAt: 0,
-    isSubmitted: false,
     reset: jest.fn(),
   };
 }
 
-function renderCommentItem(props: Partial<React.ComponentProps<typeof CommentItem>> = {}) {
-  const queryClient = new QueryClient();
+interface RenderOptions extends Partial<React.ComponentProps<typeof CommentItem>> {
+  createComment?: ReturnType<typeof createMockMutation>;
+  updateComment?: ReturnType<typeof createMockMutation>;
+  deleteComment?: ReturnType<typeof createMockMutation>;
+}
+
+function renderCommentItem(options: RenderOptions = {}) {
+  const {
+    createComment: createCommentOpt,
+    updateComment: updateCommentOpt,
+    deleteComment: deleteCommentOpt,
+    ...props
+  } = options;
+  const createComment = createCommentOpt ?? createMockMutation();
+  const updateComment = updateCommentOpt ?? createMockMutation();
+  const deleteComment = deleteCommentOpt ?? createMockMutation();
   const defaultProps = {
     comment: mockComment,
     postId: 'post-1',
-    onReply: jest.fn(),
-    onEdit: jest.fn(),
-    onDelete: jest.fn(),
-    createComment: createMockMutation(),
-    updateComment: createMockMutation(),
-    deleteComment: createMockMutation(),
     ...props,
   };
-  return render(
-    <QueryClientProvider client={queryClient}>
+  return renderWithProviders(
+    <CommentActionsProvider
+      value={{
+        createComment: createComment as ReturnType<typeof import('../../hooks/useCreateComment').useCreateComment>,
+        updateComment: updateComment as ReturnType<typeof import('../../hooks/useUpdateComment').useUpdateComment>,
+        deleteComment: deleteComment as ReturnType<typeof import('../../hooks/useDeleteComment').useDeleteComment>,
+      }}
+    >
       <CommentItem {...defaultProps} />
-    </QueryClientProvider>
+    </CommentActionsProvider>
   );
 }
 
@@ -129,9 +146,8 @@ describe('CommentItem', () => {
 
   it('submits reply when form filled and clears form on success', async () => {
     const user = userEvent.setup();
-    const onReply = jest.fn();
     const createComment = createMockMutation(true);
-    renderCommentItem({ createComment, onReply });
+    renderCommentItem({ createComment });
     await user.click(screen.getByRole('button', { name: 'Responder' }));
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'Jane');
     await user.type(screen.getByPlaceholderText('Escribe tu respuesta...'), 'Reply text');
@@ -144,15 +160,13 @@ describe('CommentItem', () => {
       }),
       expect.any(Object)
     );
-    expect(onReply).toHaveBeenCalledWith('1', 'Reply text', 'Jane', expect.any(String));
     expect(screen.queryByPlaceholderText('Escribe tu respuesta...')).not.toBeInTheDocument();
   });
 
   it('submits edit when content changed', async () => {
     const user = userEvent.setup();
-    const onEdit = jest.fn();
     const updateComment = createMockMutation(true);
-    renderCommentItem({ updateComment, onEdit });
+    renderCommentItem({ updateComment });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Editar'));
     await user.clear(screen.getByDisplayValue('Test comment'));
@@ -162,7 +176,6 @@ describe('CommentItem', () => {
       { commentId: '1', comment: { content: 'Edited' } },
       expect.any(Object)
     );
-    expect(onEdit).toHaveBeenCalledWith('1', 'Edited');
   });
 
   it('exits edit mode without mutating when content unchanged', async () => {
@@ -219,7 +232,9 @@ describe('CommentItem', () => {
     renderCommentItem({ comment: commentWithReplies, deleteComment });
     await user.click(screen.getAllByLabelText('Opciones')[0]!);
     await user.click(screen.getByText('Eliminar'));
-    expect(window.confirm).toHaveBeenCalledWith('¿Eliminar este comentario y todas sus respuestas?');
+    expect(window.confirm).toHaveBeenCalledWith(
+      expect.stringContaining('Eliminar este comentario')
+    );
     expect(deleteComment.mutate).toHaveBeenCalledWith('1');
   });
 

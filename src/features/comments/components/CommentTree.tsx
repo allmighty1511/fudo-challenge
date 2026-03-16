@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Textarea } from '@/components/ui/Textarea';
-import { CommentItem } from './CommentItem';
+import { getAvatarForName } from '@/lib/avatars';
+import { messages } from '@/lib/constants/messages';
 import { buildCommentTree } from '@/lib/utils/buildCommentTree';
+import { CommentActionsProvider } from '../contexts/CommentActionsContext';
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment } from '../hooks';
+import { CommentItem } from './CommentItem';
 
 interface CommentTreeProps {
   postId: string;
 }
-
-import { getAvatarForName } from '@/lib/avatars';
 
 export function CommentTree({ postId }: CommentTreeProps) {
   const { data: comments = [], isLoading, error } = useComments(postId);
@@ -44,24 +47,29 @@ export function CommentTree({ postId }: CommentTreeProps) {
   if (error) {
     return (
       <p className="text-[var(--color-error)] text-sm">
-        Error al cargar los comentarios.
+        {messages.errors.loadComments}
       </p>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-[var(--color-text)]">
-        Comentarios {comments.length > 0 && `(${comments.length})`}
-      </h3>
+  const actionsValue = {
+    createComment,
+    updateComment,
+    deleteComment,
+  };
 
-      <div className="space-y-3 p-4 bg-gray-50 rounded-[var(--radius-md)]">
-        <input
-          type="text"
+  return (
+    <CommentActionsProvider value={actionsValue}>
+      <div className="space-y-6" data-testid="comment-tree">
+        <h3 className="text-lg font-semibold text-[var(--color-text)]">
+          Comentarios {comments.length > 0 && `(${comments.length})`}
+        </h3>
+
+        <div className="space-y-3 p-4 bg-gray-50 rounded-[var(--radius-md)]">
+        <Input
           placeholder="Tu nombre"
           value={newCommentName}
           onChange={(e) => setNewCommentName(e.target.value)}
-          className="w-full px-3 py-2 text-sm rounded border border-[var(--color-border)] bg-[var(--color-surface)]"
         />
         <Textarea
           placeholder="Escribe un comentario..."
@@ -86,12 +94,7 @@ export function CommentTree({ postId }: CommentTreeProps) {
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-20 bg-gray-200 animate-pulse rounded-[var(--radius-md)]"
-            />
-          ))}
+          <Skeleton variant="comment" count={2} />
         </div>
       ) : (
         <div className="space-y-1">
@@ -100,21 +103,16 @@ export function CommentTree({ postId }: CommentTreeProps) {
               key={comment.id}
               comment={comment}
               postId={postId}
-              onReply={() => {}}
-              onEdit={() => {}}
-              onDelete={() => {}}
-              createComment={createComment}
-              updateComment={updateComment}
-              deleteComment={deleteComment}
             />
           ))}
           {tree.length === 0 && (
             <p className="text-sm text-[var(--color-text-muted)] py-4">
-              No hay comentarios aún. ¡Sé el primero en comentar!
+              {messages.empty.noComments}
             </p>
           )}
         </div>
       )}
-    </div>
+      </div>
+    </CommentActionsProvider>
   );
 }

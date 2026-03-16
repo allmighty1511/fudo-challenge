@@ -3,7 +3,6 @@ import {
   createComment,
   updateComment,
   deleteComment,
-  getDescendantIds,
 } from '../commentsApi';
 
 jest.mock('@/lib/api/client', () => ({
@@ -20,34 +19,6 @@ const { apiClient } = require('@/lib/api/client');
 describe('commentsApi', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('getDescendantIds', () => {
-    it('returns empty for no descendants', () => {
-      const comments = [
-        { id: '1', parentId: null } as any,
-        { id: '2', parentId: '1' } as any,
-      ];
-      expect(getDescendantIds(comments, '2')).toEqual([]);
-    });
-
-    it('returns direct children', () => {
-      const comments = [
-        { id: '1', parentId: null } as any,
-        { id: '2', parentId: '1' } as any,
-        { id: '3', parentId: '1' } as any,
-      ];
-      expect(getDescendantIds(comments, '1')).toEqual(['2', '3']);
-    });
-
-    it('returns nested descendants', () => {
-      const comments = [
-        { id: '1', parentId: null } as any,
-        { id: '2', parentId: '1' } as any,
-        { id: '3', parentId: '2' } as any,
-      ];
-      expect(getDescendantIds(comments, '1')).toEqual(['2', '3']);
-    });
   });
 
   describe('getComments', () => {

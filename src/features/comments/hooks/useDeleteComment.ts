@@ -1,9 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  deleteComment,
-  getComments,
-  getDescendantIds,
-} from '../api/commentsApi';
+import { deleteComment, getComments } from '../api/commentsApi';
+import { getDescendantIds } from '@/lib/utils/buildCommentTree';
 import type { Comment } from '@/types';
 
 export function useDeleteComment(postId: string) {

@@ -1,46 +1,26 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
-import { Textarea } from '@/components/ui/Textarea';
-import { Dropdown, DropdownItem } from '@/components/ui/Dropdown';
+import { OptionsMenu } from '@/components/ui/Dropdown';
+import { getAvatarForName } from '@/lib/avatars';
+import { messages } from '@/lib/constants/messages';
+import { formatDate } from '@/lib/utils/formatDate';
+import { useCommentActions } from '../contexts/CommentActionsContext';
 import type { CommentWithReplies } from '../types';
+import { CommentEditForm } from './CommentEditForm';
+import { CommentReplyForm } from './CommentReplyForm';
 
 interface CommentItemProps {
   comment: CommentWithReplies;
   postId: string;
   depth?: number;
-  onReply: (parentId: string | null, content: string, name: string, avatar: string) => void;
-  onEdit: (commentId: string, content: string) => void;
-  onDelete: (commentId: string) => void;
-  createComment: ReturnType<typeof import('../hooks/useCreateComment').useCreateComment>;
-  updateComment: ReturnType<typeof import('../hooks/useUpdateComment').useUpdateComment>;
-  deleteComment: ReturnType<typeof import('../hooks/useDeleteComment').useDeleteComment>;
 }
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-import { getAvatarForName } from '@/lib/avatars';
 
 export function CommentItem({
   comment,
   postId,
   depth = 0,
-  onReply,
-  onEdit,
-  onDelete,
-  createComment,
-  updateComment,
-  deleteComment,
 }: CommentItemProps) {
+  const { createComment, updateComment, deleteComment } = useCommentActions();
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replyContent, setReplyContent] = useState('');
@@ -64,7 +44,6 @@ export function CommentItem({
           setReplyContent('');
           setReplyName('');
           setIsReplying(false);
-          onReply(comment.id, replyContent, name, getAvatarForName(name));
         },
       }
     );
@@ -80,7 +59,6 @@ export function CommentItem({
       {
         onSuccess: () => {
           setIsEditing(false);
-          onEdit(comment.id, editContent);
         },
       }
     );
@@ -89,11 +67,10 @@ export function CommentItem({
   const handleDelete = () => {
     const msg =
       comment.replies.length > 0
-        ? '¿Eliminar este comentario y todas sus respuestas?'
-        : '¿Eliminar este comentario?';
+        ? messages.confirm.deleteCommentWithReplies
+        : messages.confirm.deleteComment;
     if (window.confirm(msg)) {
       deleteComment.mutate(comment.id);
-      onDelete(comment.id);
     }
   };
 
@@ -110,58 +87,27 @@ export function CommentItem({
               {comment.name}
             </span>
             <span className="text-xs text-[var(--color-text-muted)]">
-              {formatDate(comment.createdAt)}
+              {formatDate(comment.createdAt, 'long')}
             </span>
-            <Dropdown
-              trigger={
-                <button
-                  type="button"
-                  className="p-1 rounded hover:bg-gray-100 text-[var(--color-text-muted)] text-xs"
-                  aria-label="Opciones"
-                >
-                  ···
-                </button>
-              }
+            <OptionsMenu
+              onEdit={() => setIsEditing(true)}
+              onDelete={handleDelete}
               align="left"
-            >
-              <DropdownItem onClick={() => setIsEditing(true)}>
-                Editar
-              </DropdownItem>
-              <DropdownItem variant="danger" onClick={handleDelete}>
-                Eliminar
-              </DropdownItem>
-            </Dropdown>
+              size="sm"
+            />
           </div>
 
           {isEditing ? (
-            <div className="mt-2 space-y-2">
-              <Textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmitEdit();
-                  }
-                }}
-                rows={3}
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSubmitEdit} isLoading={updateComment.isPending}>
-                  Guardar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditContent(comment.content);
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
+            <CommentEditForm
+              value={editContent}
+              onChange={setEditContent}
+              onSubmit={handleSubmitEdit}
+              onCancel={() => {
+                setIsEditing(false);
+                setEditContent(comment.content);
+              }}
+              isLoading={updateComment.isPending}
+            />
           ) : (
             <p className="mt-1 text-sm text-[var(--color-text)] whitespace-pre-wrap">
               {comment.content}
@@ -179,43 +125,19 @@ export function CommentItem({
           )}
 
           {isReplying && (
-            <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-[var(--radius-md)]">
-              <input
-                type="text"
-                placeholder="Tu nombre"
-                value={replyName}
-                onChange={(e) => setReplyName(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-[var(--color-border)]"
-              />
-              <Textarea
-                placeholder="Escribe tu respuesta..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmitReply();
-                  }
-                }}
-                rows={2}
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSubmitReply} isLoading={createComment.isPending}>
-                  Responder
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setIsReplying(false);
-                    setReplyContent('');
-                    setReplyName('');
-                  }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
+            <CommentReplyForm
+              name={replyName}
+              content={replyContent}
+              onNameChange={setReplyName}
+              onContentChange={setReplyContent}
+              onSubmit={handleSubmitReply}
+              onCancel={() => {
+                setIsReplying(false);
+                setReplyContent('');
+                setReplyName('');
+              }}
+              isLoading={createComment.isPending}
+            />
           )}
         </div>
       </div>
@@ -228,12 +150,6 @@ export function CommentItem({
               comment={reply}
               postId={postId}
               depth={depth + 1}
-              onReply={onReply}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              createComment={createComment}
-              updateComment={updateComment}
-              deleteComment={deleteComment}
             />
           ))}
         </div>

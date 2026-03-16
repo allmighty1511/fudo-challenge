@@ -1,7 +1,6 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { renderWithProviders } from '@/test-utils';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CommentTree } from '../CommentTree';
 
 jest.mock('@/lib/avatars', () => ({
@@ -27,15 +26,6 @@ const {
   useDeleteComment,
 } = require('../../hooks');
 
-function createWrapper() {
-  const queryClient = new QueryClient();
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
-
 describe('CommentTree', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,7 +49,7 @@ describe('CommentTree', () => {
   });
 
   it('renders Comentarios heading', () => {
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText('Comentarios')).toBeInTheDocument();
   });
 
@@ -69,7 +59,7 @@ describe('CommentTree', () => {
       isLoading: false,
       error: new Error('Failed'),
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText('Error al cargar los comentarios.')).toBeInTheDocument();
   });
 
@@ -79,12 +69,12 @@ describe('CommentTree', () => {
       isLoading: true,
       error: null,
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText('Comentarios')).toBeInTheDocument();
   });
 
   it('shows empty message when no comments', () => {
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText(/No hay comentarios aún/)).toBeInTheDocument();
   });
 
@@ -103,7 +93,7 @@ describe('CommentTree', () => {
       isLoading: false,
       error: null,
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText(/Comentarios \(1\)/)).toBeInTheDocument();
   });
 
@@ -114,7 +104,7 @@ describe('CommentTree', () => {
       mutate,
       isPending: false,
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     await user.click(screen.getByRole('button', { name: 'Comentar' }));
     expect(mutate).not.toHaveBeenCalled();
   });
@@ -128,7 +118,7 @@ describe('CommentTree', () => {
       mutate,
       isPending: false,
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'John');
     await user.type(screen.getByPlaceholderText('Escribe un comentario...'), 'Hello');
     await user.click(screen.getByRole('button', { name: 'Comentar' }));
@@ -152,7 +142,7 @@ describe('CommentTree', () => {
       mutate,
       isPending: false,
     });
-    render(<CommentTree postId="post-1" />, { wrapper: createWrapper() });
+    renderWithProviders(<CommentTree postId="post-1" />);
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'Jane');
     await user.type(screen.getByPlaceholderText('Escribe un comentario...'), 'Hi{Enter}');
     expect(mutate).toHaveBeenCalled();
