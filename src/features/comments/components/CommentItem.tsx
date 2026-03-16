@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { OptionsMenu } from '@/components/ui/Dropdown';
-import { getAvatarForName } from '@/lib/avatars';
-import { messages } from '@/lib/constants/messages';
 import { formatDate } from '@/lib/utils/formatDate';
 import { useCommentActions } from '../contexts/CommentActionsContext';
 import type { CommentWithReplies } from '../types';
@@ -20,30 +18,27 @@ export function CommentItem({
   postId,
   depth = 0,
 }: CommentItemProps) {
-  const { createComment, updateComment, deleteComment } = useCommentActions();
-  const [isReplying, setIsReplying] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const { onReply, onEdit, onDelete, isReplying, isEditing } =
+    useCommentActions();
+  const [isReplyFormOpen, setIsReplyFormOpen] = useState(false);
+  const [isEditingLocal, setIsEditingLocal] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [replyName, setReplyName] = useState('');
   const [editContent, setEditContent] = useState(comment.content);
 
   const indent = Math.min(depth * 20, 80);
+  const showEditForm = isEditingLocal;
 
   const handleSubmitReply = () => {
     if (!replyContent.trim() || !replyName.trim()) return;
-    const name = replyName.trim();
-    createComment.mutate(
-      {
-        content: replyContent.trim(),
-        name,
-        avatar: getAvatarForName(name),
-        parentId: comment.id,
-      },
+    onReply(
+      comment.id,
+      { content: replyContent.trim(), name: replyName.trim() },
       {
         onSuccess: () => {
           setReplyContent('');
           setReplyName('');
-          setIsReplying(false);
+          setIsReplyFormOpen(false);
         },
       }
     );
@@ -51,27 +46,16 @@ export function CommentItem({
 
   const handleSubmitEdit = () => {
     if (editContent.trim() === comment.content) {
-      setIsEditing(false);
+      setIsEditingLocal(false);
       return;
     }
-    updateComment.mutate(
-      { commentId: comment.id, comment: { content: editContent.trim() } },
-      {
-        onSuccess: () => {
-          setIsEditing(false);
-        },
-      }
-    );
+    onEdit(comment.id, editContent.trim(), {
+      onSuccess: () => setIsEditingLocal(false),
+    });
   };
 
   const handleDelete = () => {
-    const msg =
-      comment.replies.length > 0
-        ? messages.confirm.deleteCommentWithReplies
-        : messages.confirm.deleteComment;
-    if (window.confirm(msg)) {
-      deleteComment.mutate(comment.id);
-    }
+    onDelete(comment.id, comment.replies.length > 0);
   };
 
   return (
@@ -90,23 +74,23 @@ export function CommentItem({
               {formatDate(comment.createdAt, 'long')}
             </span>
             <OptionsMenu
-              onEdit={() => setIsEditing(true)}
+              onEdit={() => setIsEditingLocal(true)}
               onDelete={handleDelete}
               align="left"
               size="sm"
             />
           </div>
 
-          {isEditing ? (
+          {showEditForm ? (
             <CommentEditForm
               value={editContent}
               onChange={setEditContent}
               onSubmit={handleSubmitEdit}
               onCancel={() => {
-                setIsEditing(false);
+                setIsEditingLocal(false);
                 setEditContent(comment.content);
               }}
-              isLoading={updateComment.isPending}
+              isLoading={isEditing}
             />
           ) : (
             <p className="mt-1 text-sm text-[var(--color-text)] whitespace-pre-wrap">
@@ -114,17 +98,17 @@ export function CommentItem({
             </p>
           )}
 
-          {!isEditing && (
+          {!showEditForm && (
             <button
               type="button"
-              onClick={() => setIsReplying(!isReplying)}
+              onClick={() => setIsReplyFormOpen(!isReplyFormOpen)}
               className="mt-2 text-xs text-[var(--color-accent)] hover:underline"
             >
-              {isReplying ? 'Cancelar' : 'Responder'}
+              {isReplyFormOpen ? 'Cancelar' : 'Responder'}
             </button>
           )}
 
-          {isReplying && (
+          {isReplyFormOpen && (
             <CommentReplyForm
               name={replyName}
               content={replyContent}
@@ -132,11 +116,11 @@ export function CommentItem({
               onContentChange={setReplyContent}
               onSubmit={handleSubmitReply}
               onCancel={() => {
-                setIsReplying(false);
+                setIsReplyFormOpen(false);
                 setReplyContent('');
                 setReplyName('');
               }}
-              isLoading={createComment.isPending}
+              isLoading={isReplying}
             />
           )}
         </div>
