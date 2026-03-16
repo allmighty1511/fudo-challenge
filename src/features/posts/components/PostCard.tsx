@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { OptionsMenu } from '@/components/ui/Dropdown';
 import { formatDate } from '@/lib/utils/formatDate';
+import { truncateText } from '@/lib/utils/truncateText';
 import type { Post } from '@/types';
 
 interface PostCardProps {
@@ -12,7 +13,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onEdit, onDelete }: PostCardProps) {
-  const preview = post.content.slice(0, 150) + (post.content.length > 150 ? '...' : '');
+  const preview = truncateText(post.content, 150);
 
   return (
     <Card as="article" className="p-4 md:p-6">
