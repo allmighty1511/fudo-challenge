@@ -51,9 +51,7 @@ describe('Detalle de post', () => {
   });
 
   it('elimina el post y navega al feed', () => {
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(true);
-    });
+    cy.stubConfirm(true);
 
     cy.get('button[aria-label="Opciones"]').first().click();
     cy.contains('Eliminar').click();

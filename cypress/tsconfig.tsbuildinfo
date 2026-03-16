@@ -1,0 +1,1 @@
+{"root":["./e2e/feed.cy.ts","./e2e/navigation.cy.ts","./e2e/post-detail.cy.ts","./e2e/posts.cy.ts","./fixtures/mock-comments.ts","./fixtures/mock-posts.ts","./support/api-mocks.ts","./support/commands.ts","./support/e2e.ts"],"version":"5.9.3"}

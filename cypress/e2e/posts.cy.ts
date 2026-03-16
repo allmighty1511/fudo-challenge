@@ -47,9 +47,7 @@ describe('Posts - CRUD', () => {
   });
 
   it('elimina un post con confirmación', () => {
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(true);
-    });
+    cy.stubConfirm(true);
 
     cy.get('button[aria-label="Opciones"]').first().click();
     cy.contains('Eliminar').click();
@@ -60,9 +58,7 @@ describe('Posts - CRUD', () => {
   });
 
   it('no elimina si el usuario cancela', () => {
-    cy.window().then((win) => {
-      cy.stub(win, 'confirm').returns(false);
-    });
+    cy.stubConfirm(false);
 
     cy.get('button[aria-label="Opciones"]').first().click();
     cy.contains('Eliminar').click();
