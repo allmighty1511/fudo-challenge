@@ -2,14 +2,9 @@ import React from 'react';
 import { renderWithProviders } from '@/test-utils';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { UseMutationResult } from '@tanstack/react-query';
+import type { CommentActionsValue } from '../../contexts/CommentActionsContext';
 import { CommentItem } from '../CommentItem';
 import { CommentActionsProvider } from '../../contexts/CommentActionsContext';
-
-jest.mock('@/lib/avatars', () => ({
-  getAvatarForName: (name: string) => `http://avatar/${name}`,
-  resolveAvatar: (src: string) => src || 'http://default/avatar.png',
-}));
 
 jest.mock('@/components/ui/Avatar', () => ({
   Avatar: ({ alt }: { alt: string }) => <img data-testid="avatar" alt={alt} />,
@@ -25,60 +20,33 @@ const mockComment = {
   replies: [],
 };
 
-function createMockMutation(callOnSuccess = false): Partial<
-  UseMutationResult<unknown, Error, unknown, unknown>
-> {
+function createMockActions(callOnSuccess = false): CommentActionsValue {
   return {
-    mutate: jest.fn((...args: unknown[]) => {
-      if (callOnSuccess && args[1] && typeof args[1] === 'object' && 'onSuccess' in args[1]) {
-        (args[1] as { onSuccess?: () => void }).onSuccess?.();
-      }
+    onReply: jest.fn((_parentId, _data, opts) => {
+      if (callOnSuccess) opts?.onSuccess?.();
     }),
-    isPending: false,
-    data: undefined,
-    error: null,
-    isError: false,
-    isSuccess: false,
-    isIdle: true,
-    status: 'idle',
-    variables: undefined,
-    context: undefined,
-    failureCount: 0,
-    isPaused: false,
-    submittedAt: 0,
-    reset: jest.fn(),
+    onEdit: jest.fn((_commentId, _content, opts) => {
+      if (callOnSuccess) opts?.onSuccess?.();
+    }),
+    onDelete: jest.fn(),
+    isReplying: false,
+    isEditing: false,
   };
 }
 
 interface RenderOptions extends Partial<React.ComponentProps<typeof CommentItem>> {
-  createComment?: ReturnType<typeof createMockMutation>;
-  updateComment?: ReturnType<typeof createMockMutation>;
-  deleteComment?: ReturnType<typeof createMockMutation>;
+  commentActions?: CommentActionsValue;
 }
 
 function renderCommentItem(options: RenderOptions = {}) {
-  const {
-    createComment: createCommentOpt,
-    updateComment: updateCommentOpt,
-    deleteComment: deleteCommentOpt,
-    ...props
-  } = options;
-  const createComment = createCommentOpt ?? createMockMutation();
-  const updateComment = updateCommentOpt ?? createMockMutation();
-  const deleteComment = deleteCommentOpt ?? createMockMutation();
+  const { commentActions = createMockActions(), ...props } = options;
   const defaultProps = {
     comment: mockComment,
     postId: 'post-1',
     ...props,
   };
   return renderWithProviders(
-    <CommentActionsProvider
-      value={{
-        createComment: createComment as ReturnType<typeof import('../../hooks/useCreateComment').useCreateComment>,
-        updateComment: updateComment as ReturnType<typeof import('../../hooks/useUpdateComment').useUpdateComment>,
-        deleteComment: deleteComment as ReturnType<typeof import('../../hooks/useDeleteComment').useDeleteComment>,
-      }}
-    >
+    <CommentActionsProvider value={commentActions}>
       <CommentItem {...defaultProps} />
     </CommentActionsProvider>
   );
@@ -125,89 +93,87 @@ describe('CommentItem', () => {
     expect(screen.getByDisplayValue('Test comment')).toBeInTheDocument();
   });
 
-  it('calls deleteComment when Eliminar confirmed', async () => {
+  it('calls onDelete when Eliminar clicked', async () => {
     const user = userEvent.setup();
     window.confirm = jest.fn(() => true);
-    const deleteComment = createMockMutation();
-    renderCommentItem({ deleteComment });
+    const commentActions = createMockActions();
+    renderCommentItem({ commentActions });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Eliminar'));
-    expect(deleteComment.mutate).toHaveBeenCalledWith('1');
+    expect(commentActions.onDelete).toHaveBeenCalledWith('1', false);
   });
 
   it('does not submit reply when name or content empty', async () => {
     const user = userEvent.setup();
-    const createComment = createMockMutation();
-    renderCommentItem({ createComment });
+    const commentActions = createMockActions();
+    renderCommentItem({ commentActions });
     await user.click(screen.getByRole('button', { name: 'Responder' }));
     await user.click(screen.getByRole('button', { name: 'Responder' }));
-    expect(createComment.mutate).not.toHaveBeenCalled();
+    expect(commentActions.onReply).not.toHaveBeenCalled();
   });
 
   it('submits reply when form filled and clears form on success', async () => {
     const user = userEvent.setup();
-    const createComment = createMockMutation(true);
-    renderCommentItem({ createComment });
+    const commentActions = createMockActions(true);
+    renderCommentItem({ commentActions });
     await user.click(screen.getByRole('button', { name: 'Responder' }));
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'Jane');
     await user.type(screen.getByPlaceholderText('Escribe tu respuesta...'), 'Reply text');
     await user.click(screen.getByRole('button', { name: 'Responder' }));
-    expect(createComment.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: 'Reply text',
-        name: 'Jane',
-        parentId: '1',
-      }),
-      expect.any(Object)
+    expect(commentActions.onReply).toHaveBeenCalledWith(
+      '1',
+      { content: 'Reply text', name: 'Jane' },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
     );
     expect(screen.queryByPlaceholderText('Escribe tu respuesta...')).not.toBeInTheDocument();
   });
 
   it('submits edit when content changed', async () => {
     const user = userEvent.setup();
-    const updateComment = createMockMutation(true);
-    renderCommentItem({ updateComment });
+    const commentActions = createMockActions(true);
+    renderCommentItem({ commentActions });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Editar'));
     await user.clear(screen.getByDisplayValue('Test comment'));
     await user.type(screen.getByDisplayValue(''), 'Edited');
     await user.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(updateComment.mutate).toHaveBeenCalledWith(
-      { commentId: '1', comment: { content: 'Edited' } },
-      expect.any(Object)
+    expect(commentActions.onEdit).toHaveBeenCalledWith(
+      '1',
+      'Edited',
+      expect.objectContaining({ onSuccess: expect.any(Function) })
     );
   });
 
   it('exits edit mode without mutating when content unchanged', async () => {
     const user = userEvent.setup();
-    const updateComment = createMockMutation();
-    renderCommentItem({ updateComment });
+    const commentActions = createMockActions();
+    renderCommentItem({ commentActions });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Editar'));
     await user.click(screen.getByRole('button', { name: 'Guardar' }));
-    expect(updateComment.mutate).not.toHaveBeenCalled();
+    expect(commentActions.onEdit).not.toHaveBeenCalled();
     expect(screen.getByText('Test comment')).toBeInTheDocument();
   });
 
   it('submits edit on Enter key in textarea', async () => {
     const user = userEvent.setup();
-    const updateComment = createMockMutation(true);
-    renderCommentItem({ updateComment });
+    const commentActions = createMockActions(true);
+    renderCommentItem({ commentActions });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Editar'));
     await user.clear(screen.getByDisplayValue('Test comment'));
     await user.type(screen.getByDisplayValue(''), 'New{Enter}');
-    expect(updateComment.mutate).toHaveBeenCalled();
+    expect(commentActions.onEdit).toHaveBeenCalled();
   });
 
   it('submits reply on Enter key in textarea', async () => {
     const user = userEvent.setup();
-    const createComment = createMockMutation(true);
-    renderCommentItem({ createComment });
+    const commentActions = createMockActions(true);
+    renderCommentItem({ commentActions });
     await user.click(screen.getByRole('button', { name: 'Responder' }));
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'X');
     await user.type(screen.getByPlaceholderText('Escribe tu respuesta...'), 'R{Enter}');
-    expect(createComment.mutate).toHaveBeenCalled();
+    expect(commentActions.onReply).toHaveBeenCalled();
   });
 
   it('cancels reply form', async () => {
@@ -221,21 +187,18 @@ describe('CommentItem', () => {
     expect(screen.queryByPlaceholderText('Escribe tu respuesta...')).not.toBeInTheDocument();
   });
 
-  it('shows delete with replies message when comment has replies', async () => {
+  it('calls onDelete with hasReplies when comment has replies', async () => {
     const user = userEvent.setup();
     window.confirm = jest.fn(() => true);
-    const deleteComment = createMockMutation();
+    const commentActions = createMockActions();
     const commentWithReplies = {
       ...mockComment,
       replies: [{ ...mockComment, id: '2', parentId: '1', replies: [] }],
     };
-    renderCommentItem({ comment: commentWithReplies, deleteComment });
+    renderCommentItem({ comment: commentWithReplies, commentActions });
     await user.click(screen.getAllByLabelText('Opciones')[0]!);
     await user.click(screen.getByText('Eliminar'));
-    expect(window.confirm).toHaveBeenCalledWith(
-      expect.stringContaining('Eliminar este comentario')
-    );
-    expect(deleteComment.mutate).toHaveBeenCalledWith('1');
+    expect(commentActions.onDelete).toHaveBeenCalledWith('1', true);
   });
 
   it('applies indent for nested depth', () => {
@@ -254,14 +217,14 @@ describe('CommentItem', () => {
     expect(screen.getByText('Test comment')).toBeInTheDocument();
   });
 
-  it('does not call delete when confirm cancelled', async () => {
+  it('calls onDelete when Eliminar clicked even when confirm would cancel', async () => {
     const user = userEvent.setup();
     window.confirm = jest.fn(() => false);
-    const deleteComment = createMockMutation();
-    renderCommentItem({ deleteComment });
+    const commentActions = createMockActions();
+    renderCommentItem({ commentActions });
     await user.click(screen.getByLabelText('Opciones'));
     await user.click(screen.getByText('Eliminar'));
-    expect(deleteComment.mutate).not.toHaveBeenCalled();
+    expect(commentActions.onDelete).toHaveBeenCalledWith('1', false);
   });
 
   it('renders replies', () => {

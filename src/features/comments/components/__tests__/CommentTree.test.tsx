@@ -2,85 +2,70 @@ import { renderWithProviders } from '@/test-utils';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CommentTree } from '../CommentTree';
-
-jest.mock('@/lib/avatars', () => ({
-  getAvatarForName: (name: string) => `http://avatar/${name}`,
-  resolveAvatar: (src: string) => src || 'http://default/avatar.png',
-}));
+import { CommentActionsProvider } from '../../contexts/CommentActionsContext';
 
 jest.mock('@/components/ui/Avatar', () => ({
   Avatar: ({ alt }: { alt: string }) => <img data-testid="avatar" alt={alt} />,
 }));
 
-jest.mock('../../hooks', () => ({
-  useComments: jest.fn(),
-  useCreateComment: jest.fn(),
-  useUpdateComment: jest.fn(),
-  useDeleteComment: jest.fn(),
-}));
+const mockCommentActions = {
+  onReply: jest.fn(),
+  onEdit: jest.fn(),
+  onDelete: jest.fn(),
+  isReplying: false,
+  isEditing: false,
+};
 
-const {
-  useComments,
-  useCreateComment,
-  useUpdateComment,
-  useDeleteComment,
-} = require('../../hooks');
+const defaultProps = {
+  tree: [],
+  commentCount: 0,
+  isLoading: false,
+  error: false,
+  newCommentName: '',
+  newCommentContent: '',
+  onNewCommentNameChange: jest.fn(),
+  onNewCommentContentChange: jest.fn(),
+  onSubmitNew: jest.fn(),
+  isSubmitting: false,
+  postId: 'post-1',
+};
+
+function renderCommentTree(props = {}) {
+  return renderWithProviders(
+    <CommentActionsProvider value={mockCommentActions}>
+      <CommentTree {...defaultProps} {...props} />
+    </CommentActionsProvider>
+  );
+}
 
 describe('CommentTree', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (useComments as jest.Mock).mockReturnValue({
-      data: [],
-      isLoading: false,
-      error: null,
-    });
-    (useCreateComment as jest.Mock).mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    });
-    (useUpdateComment as jest.Mock).mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    });
-    (useDeleteComment as jest.Mock).mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    });
   });
 
   it('renders Comentarios heading', () => {
-    renderWithProviders(<CommentTree postId="post-1" />);
+    renderCommentTree();
     expect(screen.getByText('Comentarios')).toBeInTheDocument();
   });
 
   it('shows error when error', () => {
-    (useComments as jest.Mock).mockReturnValue({
-      data: [],
-      isLoading: false,
-      error: new Error('Failed'),
-    });
-    renderWithProviders(<CommentTree postId="post-1" />);
+    renderCommentTree({ error: true });
     expect(screen.getByText('Error al cargar los comentarios.')).toBeInTheDocument();
   });
 
   it('shows loading skeletons when loading', () => {
-    (useComments as jest.Mock).mockReturnValue({
-      data: [],
-      isLoading: true,
-      error: null,
-    });
-    renderWithProviders(<CommentTree postId="post-1" />);
+    renderCommentTree({ isLoading: true });
     expect(screen.getByText('Comentarios')).toBeInTheDocument();
   });
 
   it('shows empty message when no comments', () => {
-    renderWithProviders(<CommentTree postId="post-1" />);
+    renderCommentTree();
     expect(screen.getByText(/No hay comentarios aún/)).toBeInTheDocument();
   });
 
   it('shows comment count when has comments', () => {
-    (useComments as jest.Mock).mockReturnValue({
-      data: [
+    renderCommentTree({
+      tree: [
         {
           id: '1',
           content: 'Hi',
@@ -88,63 +73,36 @@ describe('CommentTree', () => {
           avatar: '',
           parentId: null,
           createdAt: '',
+          replies: [],
         },
       ],
-      isLoading: false,
-      error: null,
+      commentCount: 1,
     });
-    renderWithProviders(<CommentTree postId="post-1" />);
     expect(screen.getByText(/Comentarios \(1\)/)).toBeInTheDocument();
   });
 
-  it('does not submit when name or content empty', async () => {
+  it('calls onSubmitNew when form filled and button clicked', async () => {
     const user = userEvent.setup();
-    const mutate = jest.fn();
-    (useCreateComment as jest.Mock).mockReturnValue({
-      mutate,
-      isPending: false,
+    const onSubmitNew = jest.fn();
+    const onNewCommentNameChange = jest.fn();
+    const onNewCommentContentChange = jest.fn();
+    renderCommentTree({
+      onSubmitNew,
+      onNewCommentNameChange,
+      onNewCommentContentChange,
     });
-    renderWithProviders(<CommentTree postId="post-1" />);
-    await user.click(screen.getByRole('button', { name: 'Comentar' }));
-    expect(mutate).not.toHaveBeenCalled();
-  });
-
-  it('submits new comment when form filled', async () => {
-    const user = userEvent.setup();
-    const mutate = jest.fn((_data: unknown, opts?: { onSuccess?: () => void }) => {
-      opts?.onSuccess?.();
-    });
-    (useCreateComment as jest.Mock).mockReturnValue({
-      mutate,
-      isPending: false,
-    });
-    renderWithProviders(<CommentTree postId="post-1" />);
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'John');
     await user.type(screen.getByPlaceholderText('Escribe un comentario...'), 'Hello');
     await user.click(screen.getByRole('button', { name: 'Comentar' }));
-    expect(mutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        content: 'Hello',
-        name: 'John',
-        parentId: null,
-      }),
-      expect.any(Object)
-    );
-    expect(screen.getByPlaceholderText('Escribe un comentario...')).toHaveValue('');
+    expect(onSubmitNew).toHaveBeenCalled();
   });
 
-  it('submits new comment on Enter key', async () => {
+  it('calls onSubmitNew on Enter key', async () => {
     const user = userEvent.setup();
-    const mutate = jest.fn((_data: unknown, opts?: { onSuccess?: () => void }) => {
-      opts?.onSuccess?.();
-    });
-    (useCreateComment as jest.Mock).mockReturnValue({
-      mutate,
-      isPending: false,
-    });
-    renderWithProviders(<CommentTree postId="post-1" />);
+    const onSubmitNew = jest.fn();
+    renderCommentTree({ onSubmitNew });
     await user.type(screen.getByPlaceholderText('Tu nombre'), 'Jane');
     await user.type(screen.getByPlaceholderText('Escribe un comentario...'), 'Hi{Enter}');
-    expect(mutate).toHaveBeenCalled();
+    expect(onSubmitNew).toHaveBeenCalled();
   });
 });
