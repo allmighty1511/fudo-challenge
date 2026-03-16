@@ -1,5 +1,33 @@
-import { buildCommentTree } from '../buildCommentTree';
+import { buildCommentTree, getDescendantIds } from '../buildCommentTree';
 import type { Comment } from '@/types';
+
+describe('getDescendantIds', () => {
+  it('returns empty for no descendants', () => {
+    const comments: Comment[] = [
+      { id: '1', content: '', name: '', avatar: '', parentId: null, createdAt: '' },
+      { id: '2', content: '', name: '', avatar: '', parentId: '1', createdAt: '' },
+    ];
+    expect(getDescendantIds(comments, '2')).toEqual([]);
+  });
+
+  it('returns direct children', () => {
+    const comments: Comment[] = [
+      { id: '1', content: '', name: '', avatar: '', parentId: null, createdAt: '' },
+      { id: '2', content: '', name: '', avatar: '', parentId: '1', createdAt: '' },
+      { id: '3', content: '', name: '', avatar: '', parentId: '1', createdAt: '' },
+    ];
+    expect(getDescendantIds(comments, '1')).toEqual(['2', '3']);
+  });
+
+  it('returns nested descendants', () => {
+    const comments: Comment[] = [
+      { id: '1', content: '', name: '', avatar: '', parentId: null, createdAt: '' },
+      { id: '2', content: '', name: '', avatar: '', parentId: '1', createdAt: '' },
+      { id: '3', content: '', name: '', avatar: '', parentId: '2', createdAt: '' },
+    ];
+    expect(getDescendantIds(comments, '1')).toEqual(['2', '3']);
+  });
+});
 
 describe('buildCommentTree', () => {
   it('returns empty array for empty input', () => {
