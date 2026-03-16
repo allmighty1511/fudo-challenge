@@ -12,10 +12,14 @@ function TestConsumer() {
   );
 }
 
+interface WindowWithMatchMedia extends Window {
+  matchMedia: (query: string) => MediaQueryList;
+}
+
 describe('ThemeContext', () => {
   it('provides dark theme when prefers-color-scheme dark', () => {
     const originalMatchMedia = window.matchMedia;
-    (window as any).matchMedia = jest.fn().mockImplementation((query: string) => ({
+    (window as WindowWithMatchMedia).matchMedia = jest.fn().mockImplementation((query: string) => ({
       matches: query === '(prefers-color-scheme: dark)',
       media: query,
       addListener: jest.fn(),
@@ -23,12 +27,12 @@ describe('ThemeContext', () => {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
       dispatchEvent: jest.fn(),
-    }));
+    })) as unknown as (query: string) => MediaQueryList;
     const { result } = renderHook(() => useTheme(), {
       wrapper: ({ children }) => <ThemeProvider>{children}</ThemeProvider>,
     });
     expect(result.current.theme).toBe('dark');
-    (window as any).matchMedia = originalMatchMedia;
+    (window as WindowWithMatchMedia).matchMedia = originalMatchMedia;
   });
 
   it('provides theme and toggleTheme', () => {
