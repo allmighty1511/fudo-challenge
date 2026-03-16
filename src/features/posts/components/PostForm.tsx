@@ -2,12 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { getAvatarForName, resolveAvatar } from '@/lib/avatars';
-import type { PostFormData } from '../types';
+import type { PostFormFields } from '../types';
 
 interface PostFormProps {
-  initialData?: PostFormData;
-  onSubmit: (data: PostFormData) => void;
+  initialData?: PostFormFields;
+  onSubmit: (data: PostFormFields) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -24,10 +23,7 @@ export function PostForm({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const avatar = initialData?.avatar
-      ? resolveAvatar(initialData.avatar)
-      : getAvatarForName(name.trim());
-    onSubmit({ title, content, name, avatar });
+    onSubmit({ title, content, name });
   };
 
   return (

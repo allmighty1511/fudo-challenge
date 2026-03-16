@@ -10,8 +10,9 @@ import {
   useUpdatePost,
   useDeletePost,
 } from '../hooks';
+import { getAvatarForName, resolveAvatar } from '@/lib/avatars';
 import type { Post } from '@/types';
-import type { PostFormData } from '../types';
+import type { PostFormData, PostFormFields } from '../types';
 
 export function FeedPage() {
   const { data: posts, isLoading, error } = usePosts();
@@ -38,7 +39,11 @@ export function FeedPage() {
     }
   };
 
-  const handleSubmit = (data: PostFormData) => {
+  const handleSubmit = (fields: PostFormFields) => {
+    const avatar = editingPost?.avatar
+      ? resolveAvatar(editingPost.avatar)
+      : getAvatarForName(fields.name.trim());
+    const data: PostFormData = { ...fields, avatar };
     if (editingPost) {
       updatePost.mutate(
         { id: editingPost.id, post: data },

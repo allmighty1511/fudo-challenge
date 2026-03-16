@@ -5,12 +5,15 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Avatar } from '@/components/ui/Avatar';
 import { OptionsMenu } from '@/components/ui/Dropdown';
+import { CommentActionsProvider } from '@/features/comments/contexts/CommentActionsContext';
 import { CommentTree } from '@/features/comments/components/CommentTree';
+import { useCommentTree } from '@/features/comments/hooks';
 import { messages } from '@/lib/constants/messages';
 import { formatDate } from '@/lib/utils/formatDate';
 import { PostFormModal } from '../components';
+import { resolveAvatar } from '@/lib/avatars';
 import { usePost, useUpdatePost, useDeletePost } from '../hooks';
-import type { PostFormData } from '../types';
+import type { PostFormData, PostFormFields } from '../types';
 
 export function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +21,7 @@ export function PostDetailPage() {
   const { data: post, isLoading, error } = usePost(id);
   const updatePost = useUpdatePost();
   const deletePost = useDeletePost();
+  const commentTree = useCommentTree(id);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -28,8 +32,10 @@ export function PostDetailPage() {
     });
   };
 
-  const handleSubmitEdit = (data: PostFormData) => {
+  const handleSubmitEdit = (fields: PostFormFields) => {
     if (!post) return;
+    const avatar = resolveAvatar(post.avatar);
+    const data: PostFormData = { ...fields, avatar };
     updatePost.mutate(
       { id: post.id, post: data },
       {
@@ -105,7 +111,23 @@ export function PostDetailPage() {
         </div>
       </Card>
 
-      {id && <CommentTree postId={id} />}
+      {id && (
+        <CommentActionsProvider value={commentTree.commentActions}>
+          <CommentTree
+            tree={commentTree.tree}
+            commentCount={commentTree.comments.length}
+            isLoading={commentTree.isLoading}
+            error={!!commentTree.error}
+            newCommentName={commentTree.newCommentName}
+            newCommentContent={commentTree.newCommentContent}
+            onNewCommentNameChange={commentTree.setNewCommentName}
+            onNewCommentContentChange={commentTree.setNewCommentContent}
+            onSubmitNew={commentTree.handleSubmitNew}
+            isSubmitting={commentTree.isSubmitting}
+            postId={id}
+          />
+        </CommentActionsProvider>
+      )}
 
       <PostFormModal
         isOpen={isEditModalOpen}

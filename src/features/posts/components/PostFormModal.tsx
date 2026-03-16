@@ -1,13 +1,13 @@
 import { Modal } from '@/components/ui/Modal';
 import { PostForm } from './PostForm';
 import type { Post } from '@/types';
-import type { PostFormData } from '../types';
+import type { PostFormFields } from '../types';
 
 interface PostFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   post?: Post | null;
-  onSubmit: (data: PostFormData) => void;
+  onSubmit: (data: PostFormFields) => void;
   isLoading?: boolean;
 }
 
@@ -23,7 +23,6 @@ export function PostFormModal({
         title: post.title,
         content: post.content,
         name: post.name,
-        avatar: post.avatar,
       }
     : undefined;
 
