@@ -4,14 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "seed": "node scripts/seed.mjs",
-    "seed:comments": "node scripts/seed-comments.mjs",
-    "dev": "npm run seed && vite",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watchAll",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
