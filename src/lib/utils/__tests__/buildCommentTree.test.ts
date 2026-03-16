@@ -28,6 +28,15 @@ describe('buildCommentTree', () => {
     expect(tree[0]?.replies[0]).toMatchObject({ content: 'reply' });
   });
 
+  it('handles orphan comment when parent not found', () => {
+    const comments: Comment[] = [
+      { id: '1', content: 'orphan', name: 'X', avatar: '', parentId: 'missing', createdAt: '' },
+    ];
+    const tree = buildCommentTree(comments);
+    expect(tree).toHaveLength(1);
+    expect(tree[0]).toMatchObject({ content: 'orphan' });
+  });
+
   it('handles nested replies', () => {
     const comments: Comment[] = [
       { id: '1', content: 'root', name: 'A', avatar: '', parentId: null, createdAt: '' },

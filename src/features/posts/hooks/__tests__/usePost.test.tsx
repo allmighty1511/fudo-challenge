@@ -1,0 +1,43 @@
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { usePost } from '../usePost';
+
+jest.mock('../../api/postsApi', () => ({
+  getPost: jest.fn(),
+}));
+
+const { getPost } = require('../../api/postsApi');
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  };
+}
+
+describe('usePost', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('fetches post when id provided', async () => {
+    const data = { id: '1', title: 'T', content: 'C', name: 'N', avatar: '', createdAt: '' };
+    (getPost as jest.Mock).mockResolvedValue(data);
+    const { result } = renderHook(() => usePost('1'), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(data);
+  });
+
+  it('does not fetch when id undefined', () => {
+    renderHook(() => usePost(undefined), {
+      wrapper: createWrapper(),
+    });
+    expect(getPost).not.toHaveBeenCalled();
+  });
+});

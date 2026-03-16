@@ -17,7 +17,7 @@ export const DEFAULT_AVATAR: AvatarId = '/avatars/avatar1.svg';
 
 function getBaseUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin;
-  return import.meta.env?.VITE_APP_URL ?? 'http://localhost:5173';
+  return (process as NodeJS.Process & { env?: { VITE_APP_URL?: string } }).env?.VITE_APP_URL ?? 'http://localhost:5173';
 }
 
 export function getAvatarUrl(avatar: AvatarId | string): string {
