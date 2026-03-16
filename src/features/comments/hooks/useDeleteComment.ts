@@ -13,7 +13,6 @@ export function useDeleteComment(postId: string) {
         (await getComments(postId));
 
       const descendantIds = getDescendantIds(comments, commentId);
-      // Borrar primero los descendientes (hojas primero), luego el padre
       for (const id of descendantIds) {
         await deleteComment(postId, id);
       }

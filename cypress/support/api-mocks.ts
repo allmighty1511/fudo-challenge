@@ -6,10 +6,7 @@ export const mockComments = fixtureComments;
 
 const MOCK_API = Cypress.env('mockApi') as string;
 
-/** IDs de posts "eliminados" para simular refetch sin ellos */
 const deletedPostIds = new Set<string>();
-
-/** Posts actualizados por PUT para que GET devuelva el estado actualizado */
 const updatedPosts = new Map<string, (typeof mockPosts)[0]>();
 
 function getPostById(id: string) {

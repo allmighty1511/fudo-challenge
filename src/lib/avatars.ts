@@ -37,7 +37,6 @@ export function getRandomAvatarUrl(): string {
   return getAvatarUrl(getRandomAvatar());
 }
 
-/** Asigna un avatar del enum de forma determinista según el nombre. */
 export function getAvatarForName(name: string): string {
   if (!name?.trim()) return getAvatarUrl(DEFAULT_AVATAR);
   let hash = 0;

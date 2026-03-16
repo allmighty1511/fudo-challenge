@@ -4,7 +4,6 @@ export interface CommentWithReplies extends Comment {
   replies: CommentWithReplies[];
 }
 
-/** Obtiene los IDs de todos los descendientes de un comentario (recursivo). */
 export function getDescendantIds(comments: Comment[], parentId: string): string[] {
   const ids: string[] = [];
   for (const c of comments) {

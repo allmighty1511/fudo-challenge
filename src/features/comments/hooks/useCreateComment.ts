@@ -8,9 +8,7 @@ export function useCreateComment(postId: string) {
   return useMutation({
     mutationFn: (comment: Partial<Comment>) => createComment(postId, comment),
     onSuccess: (newComment) => {
-      // Añadir el nuevo comentario a la lista existente en lugar de invalidar.
-      // Evita que un refetch con datos incompletos (p. ej. límites de MockAPI)
-      // borre los comentarios ya mostrados.
+      // setQueryData en vez de invalidate: MockAPI devuelve limit y perdemos los ya cargados
       queryClient.setQueryData<Comment[]>(['comments', postId], (old) =>
         old ? [...old, newComment] : [newComment]
       );

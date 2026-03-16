@@ -1,8 +1,3 @@
-/**
- * Mock de comentarios con estructura anidada completa.
- * Cubre: raíces múltiples, varios niveles, hermanos, contenido especial,
- * orden temporal, patrones de conversación, edge cases y datos de usuario.
- */
 export const mockComments = [
   { id: 'c1', content: 'Primer comentario del post', name: 'Ana García', avatar: '/avatars/avatar1.svg', parentId: null, createdAt: '2024-01-15T10:00:00.000Z' },
   { id: 'c2', content: 'Respuesta directa al primer comentario', name: 'Carlos López', avatar: '/avatars/avatar2.svg', parentId: 'c1', createdAt: '2024-01-15T10:15:00.000Z' },
