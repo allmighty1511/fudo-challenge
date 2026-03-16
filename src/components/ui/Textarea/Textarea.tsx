@@ -1,4 +1,5 @@
 import type { TextareaHTMLAttributes } from 'react';
+import { FormField } from '@/components/ui/FormField';
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -6,26 +7,15 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 export function Textarea({ label, error, id, className = '', ...props }: TextareaProps) {
-  const inputId = id ?? `textarea-${Math.random().toString(36).slice(2)}`;
-
   return (
-    <div className="w-full">
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-[var(--color-text)] mb-1"
-        >
-          {label}
-        </label>
+    <FormField label={label} error={error} id={id}>
+      {({ id: fieldId, className: fieldClassName }) => (
+        <textarea
+          id={fieldId}
+          className={`${fieldClassName} ${className}`.trim()}
+          {...props}
+        />
       )}
-      <textarea
-        id={inputId}
-        className={`w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent ${error ? 'border-[var(--color-error)]' : ''} ${className}`}
-        {...props}
-      />
-      {error && (
-        <p className="mt-1 text-sm text-[var(--color-error)]">{error}</p>
-      )}
-    </div>
+    </FormField>
   );
 }
